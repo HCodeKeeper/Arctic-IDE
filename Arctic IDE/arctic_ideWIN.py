@@ -13,18 +13,20 @@ class GUI(tk.Tk):
         self.tabControl = ttk.Notebook(self)
         self.tabControl.grid(row=0, column=0)
         self.tabs = []
-        self.currentTab = None #has to be object Tab() from self.tabs
+        self.currentTabNumber = None #has to be object Tab() from self.tabs
 
-        '''
-        tk.Grid.rowconfigure(self, Tab.gridPosiotion[0], weight=1)
-        tk.Grid.columnconfigure(self, Tab.gridPosiotion[1], weight=1)
-        '''
         self.CreateTab()
     
+    def GetCurrentTab(self):
+        if self.tabControl.index(self.tabControl.select()):
+            self.currentTabNumber = self.tabControl.index(self.tabControl.select())
+        else:
+            self.currentTabNumber = None
+        return self.currentTabNumber
+
 
     def SpawnInCenter(self, mWidth, mHeight):
         return f"{cf.Geometry.width}x{cf.Geometry.height}+{(mWidth - cf.Geometry.width)//2}+{(mHeight-cf.Geometry.height)//2}"
-
 
 
     def CreateTab(self, title=None):
@@ -42,11 +44,14 @@ class Tab(ttk.Frame):
         tabControl.add(self, text=title)
         self.textField = TextField(self)
         self.textField.grid(row=Tab.gridPosiotion[0], column=Tab.gridPosiotion[1], sticky=tk.NW)
+        tabControl
 
 
 class TextField(tk.Text):
     def __init__(self, parent):
         super().__init__(parent)
+
+        self.contentList = self.GetContent()
 
         # Vertical (y) Scroll Bar
         self.yscrollbar = tk.Scrollbar(parent, orient=tk.VERTICAL)
@@ -61,9 +66,19 @@ class TextField(tk.Text):
         self.yscrollbar.config(command=self.yview)
 
     
+    def GetContent(self, omit=None):
+        content = self.get("1.0", tk.END)
+        content = content[0:-1] #\n charachter always is spawned by default
+        self.contentList = list(content) if not omit else content.split(omit)
+        return self.contentList
+
+    
     def ThrowTab(self):
         self.insert('end', "\t")
 
 if __name__ == '__main__':
     program = GUI()
-    program.mainloop()
+    while True:
+        program.GetCurrentTab()
+        program.update_idletasks()
+        program.update()
