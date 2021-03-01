@@ -1,4 +1,5 @@
 from dependencies import *
+import time
 ##import char_pix_converter as fontConverter
 
 
@@ -18,7 +19,7 @@ class GUI(tk.Tk):
         self.CreateTab()
     
     def GetCurrentTab(self):
-        if self.tabControl.index(self.tabControl.select()):
+        if self.tabs:
             self.currentTabNumber = self.tabControl.index(self.tabControl.select())
         else:
             self.currentTabNumber = None
@@ -52,6 +53,9 @@ class TextField(tk.Text):
         super().__init__(parent)
 
         self.contentList = self.GetContent()
+        self.content = ''.join(self.contentList)
+
+        self.tabCounter = 0
 
         # Vertical (y) Scroll Bar
         self.yscrollbar = tk.Scrollbar(parent, orient=tk.VERTICAL)
@@ -69,16 +73,28 @@ class TextField(tk.Text):
     def GetContent(self, omit=None):
         content = self.get("1.0", tk.END)
         content = content[0:-1] #\n charachter always is spawned by default
-        self.contentList = list(content) if not omit else content.split(omit)
+        def update():
+            self.contentList = list(content) if not omit else content.split(omit)
+            self.content = ''.join(self.contentList)
+        update()
         return self.contentList
 
     
-    def ThrowTab(self):
-        self.insert('end', "\t")
+    def AutomaticTabThrowing(self):
+        self.GetContent()
+        if len(self.content) >= 2:
+            if self.content[-1] == '\n' and self.content[-2] == ':':
+                self.tabCounter += 1
+                self.insert('end', "\t"*self.tabCounter)
+                return "Tab was thrown"
+        return None
+
 
 if __name__ == '__main__':
     program = GUI()
     while True:
-        program.GetCurrentTab()
+        if program.GetCurrentTab() != None:
+            print(program.tabs[program.currentTabNumber].textField.AutomaticTabThrowing())
         program.update_idletasks()
         program.update()
+        time.sleep(0.01)
