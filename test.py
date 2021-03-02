@@ -5,6 +5,7 @@ def _generateTabs(n_ext=1):
         for n in range(n_ext):
             program.CreateTab()
 
+
 def GetTabInfo(_Sum=True, CurNum=True, CurTab=True, CurTabContent=True):
     message = ""
     
@@ -36,9 +37,8 @@ if __name__ == '__main__':
     program = GUI()
     _generateTabs(20)
     program.tabs[0].textField.insert("1.0", "brbrbr brbrbrb    brbrb\n")
-    print(program.tabs[0].textField.GetContent("    "))
     while True:
+        print(program.tabs[0].textField.GetContent())
         print(program.GetCurrentTab()) #
         program.update_idletasks()
         program.update()
-        #print(GetTabInfo(False))

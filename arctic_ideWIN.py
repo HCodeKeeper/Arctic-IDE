@@ -80,21 +80,44 @@ class TextField(tk.Text):
         return self.contentList
 
     
-    def AutomaticTabThrowing(self):
-        self.GetContent()
+    def __AutoTabThrowing(self):
         if len(self.content) >= 2:
             if self.content[-1] == '\n' and self.content[-2] == ':':
                 self.tabCounter += 1
                 self.insert('end', "\t"*self.tabCounter)
-                return "Tab was thrown"
+                return self.tabCounter
         return None
+    
+
+    def __AutoTabErasing(self): #!!!"\t" or "    "
+        tabCounter = self.tabCounter
+        if len(self.content) >= 2:
+            reversedContentList = self.contentList[::-1]
+            if tabCounter:
+                if '\t' in reversedContentList:
+                    startIndex = reversedContentList.index('\t')
+                else:
+                    startIndex = 0
+                if tabCounter == len(reversedContentList[startIndex: reversedContentList.index('\n')]):
+                    return self.tabCounter
+                else:
+                    tabCounter -= 1
+                    return tabCounter
+        return self.tabCounter
+
+        
+    def AutoTabGenerating(self):
+        self.GetContent()
+        self.tabCounter = self.__AutoTabErasing()
+        self.__AutoTabThrowing()
+
 
 
 if __name__ == '__main__':
     program = GUI()
     while True:
         if program.GetCurrentTab() != None:
-            print(program.tabs[program.currentTabNumber].textField.AutomaticTabThrowing())
+            program.tabs[program.currentTabNumber].textField.AutoTabGenerating()
         program.update_idletasks()
         program.update()
         time.sleep(0.01)
