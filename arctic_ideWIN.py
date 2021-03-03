@@ -14,16 +14,19 @@ class GUI(tk.Tk):
         self.tabControl = ttk.Notebook(self)
         self.tabControl.grid(row=0, column=0)
         self.tabs = []
-        self.currentTabNumber = None #has to be object Tab() from self.tabs
+        self.currentTabIndex = None #has to be object Tab() from self.tabs # old
+        self.currentTab = None
 
         self.CreateTab()
     
     def GetCurrentTab(self):
         if self.tabs:
-            self.currentTabNumber = self.tabControl.index(self.tabControl.select())
+            self.currentTabIndex = self.tabControl.index(self.tabControl.select())
+            self.currentTab = self.tabs[self.currentTabIndex]
         else:
-            self.currentTabNumber = None
-        return self.currentTabNumber
+            self.currentTabIndex = None
+            self.currentTab = None
+        return self.currentTabIndex
 
 
     def SpawnInCenter(self, mWidth, mHeight):
@@ -56,6 +59,7 @@ class TextField(tk.Text):
         self.content = ''.join(self.contentList)
 
         self.tabCounter = 0
+        self.isTab = False
 
         # Vertical (y) Scroll Bar
         self.yscrollbar = tk.Scrollbar(parent, orient=tk.VERTICAL)
@@ -68,6 +72,7 @@ class TextField(tk.Text):
             )
         
         self.yscrollbar.config(command=self.yview)
+        self.bind('<Return>', self._InsertTabEvent)
 
     
     def GetContent(self, omit=None):
@@ -80,44 +85,27 @@ class TextField(tk.Text):
         return self.contentList
 
     
-    def __AutoTabThrowing(self):
-        if len(self.content) >= 2:
-            if self.content[-1] == '\n' and self.content[-2] == ':':
+    def _InsertTabEvent(self, event):
+        if len(self.content) >= 1:
+            if self.content[-1] == ':':
                 self.tabCounter += 1
-                self.insert('end', "\t"*self.tabCounter)
-                return self.tabCounter
-        return None
-    
+                self.isTab = True
 
-    def __AutoTabErasing(self): #!!!"\t" or "    "
-        tabCounter = self.tabCounter
-        if len(self.content) >= 2:
-            reversedContentList = self.contentList[::-1]
-            if tabCounter:
-                if '\t' in reversedContentList:
-                    startIndex = reversedContentList.index('\t')
-                else:
-                    startIndex = 0
-                if tabCounter == len(reversedContentList[startIndex: reversedContentList.index('\n')]):
-                    return self.tabCounter
-                else:
-                    tabCounter -= 1
-                    return tabCounter
-        return self.tabCounter
 
-        
-    def AutoTabGenerating(self):
-        self.GetContent()
-        self.tabCounter = self.__AutoTabErasing()
-        self.__AutoTabThrowing()
+class MainloopProcessing: #Only for mainloop
 
+    def ProcessTabEvents(textFieldObj):
+        if textFieldObj.tabCounter and textFieldObj.isTab:
+            textFieldObj.insert('end', "\t"*textFieldObj.tabCounter)
+        textFieldObj.isTab = False
 
 
 if __name__ == '__main__':
     program = GUI()
     while True:
         if program.GetCurrentTab() != None:
-            program.tabs[program.currentTabNumber].textField.AutoTabGenerating()
+            program.currentTab.textField.GetContent()
+            MainloopProcessing.ProcessTabEvents(program.currentTab.textField)
         program.update_idletasks()
         program.update()
         time.sleep(0.01)
