@@ -4,7 +4,7 @@ from typing import Annotated
 import os
 
 class File():
-    default_ext = ".py"
+    default_ext = ".arc"
     filetypes = [
         ("All files", ".*"),
         ("Python", ".py"),
@@ -31,7 +31,7 @@ class File():
 
     def save(textSrc="", _file=False): #_file = GUI.tab.fileObj, textSrc --> GUI.tab.TextField.content
         if _file:
-            with open(_file.name, 'r+') as _file:
+            with open(_file.name, 'w') as _file:
                 _file.write(textSrc)
 
 

@@ -122,8 +122,9 @@ class Tab(tk.Frame):
 
 
     def _UpdateUniqueName(self, fileObj):
-        self.uniqueName = os.path.basename(fileObj.name)
-        self.tabControl.tab(self.tabID, text=self.uniqueName)
+        if fileObj:
+            self.uniqueName = os.path.basename(fileObj.name)
+            self.tabControl.tab(self.tabID, text=self.uniqueName)
 
 
     def UpdateFileObj(self, fileObj):
