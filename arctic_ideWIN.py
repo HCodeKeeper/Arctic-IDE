@@ -1,7 +1,8 @@
 from dependencies import *
 import time
 from typing import Annotated
-##import char_pix_converter as fontConverter
+import file_managment as file_m
+import os
 
 
 class GUI(tk.Tk):
@@ -26,11 +27,11 @@ class GUI(tk.Tk):
         self.fileMenu = tk.Menu(self)
         self.menuBar.add_cascade(label="File", menu=self.fileMenu)
         self.fileMenu.add_command(label="Create a file", command = self.CreateTab)
-        self.fileMenu.add_command(label="Open a file", command = lambda: cntx_funcs.file_m.File.open(self))
+        self.fileMenu.add_command(label="Open a file", command = lambda: file_m.File.open(self))
         self.fileMenu.add_command(label="Create a project")
         self.fileMenu.add_command(label="Open a project")
-        self.fileMenu.add_command(label="Save", command = lambda: cntx_funcs.file_m.File.save(textSrc=self.currentTab.textField.content, _file=self.currentTab.fileObj))
-        self.fileMenu.add_command(label="Save as", command = lambda: self.currentTab.UpdateFileObj(cntx_funcs.file_m.File.save_as(textSrc=self.currentTab.textField.content)))
+        self.fileMenu.add_command(label="Save", command = lambda: file_m.File.save(textSrc=self.currentTab.textField.content, _file=self.currentTab.fileObj))
+        self.fileMenu.add_command(label="Save as", command = lambda: self.currentTab.UpdateFileObj(file_m.File.save_as(textSrc=self.currentTab.textField.content)))
 
         #View Menu
         self.viewMenu = tk.Menu(self)
@@ -112,13 +113,22 @@ class Tab(tk.Frame):
         super().__init__(tabControl)
         self.uniqueName = uniqueName
         self.fileObj = fileObj
+        self.tabControl= tabControl
         tabControl.add(self, text=title if not self.uniqueName else self.uniqueName)
+        self.tabID = tabControl.tabs()[-1]
         self.textField = TextField(self)
         self.textField.grid(row=0, column=0, sticky=tk.NW)
     
 
+
+    def _UpdateUniqueName(self, fileObj):
+        self.uniqueName = os.path.basename(fileObj.name)
+        self.tabControl.tab(self.tabID, text=self.uniqueName)
+
+
     def UpdateFileObj(self, fileObj):
         self.fileObj = fileObj
+        self._UpdateUniqueName(self.fileObj)
     
 
 
