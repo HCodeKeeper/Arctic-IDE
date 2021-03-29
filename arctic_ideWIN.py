@@ -3,6 +3,9 @@ import time
 from typing import Annotated
 import file_managment as file_m
 import os
+import developer_tools
+import compilers
+import cmd_assistant_library
 
 
 class GUI(tk.Tk):
@@ -54,12 +57,26 @@ class GUI(tk.Tk):
 
         self.btnCreateTab = tk.Button(self.frontContextFrame, text="+", bg="#99ff6e", command = self.CreateTab, width=2, height=1)
         self.btnDeleteTab = tk.Button(self.frontContextFrame, text="-", bg="#ff5e5e", command = self.DeleteTab, width=2, height=1)
+        self.language_picker = tk.Listbox(self)
+        for language in compilers.extensions:
+            self.language_picker.insert(tk.END, language)
+        self.btn_run_internal = tk.Button(self.frontContextFrame, text="Run internal", #image=tk.PhotoImage("run_internal_console.png")
+         command = self.process_compilation,
+         )
 
         self.btnCreateTab.grid(row=0, column=0)
         self.btnDeleteTab.grid(row=0, column=1)
+        self.btn_run_internal.grid(row=0, column=2)
+        self.language_picker.grid(row=1, column=1)
         #
         self.CreateTab()
     
+    def process_compilation(self):
+        directory = cmd_assistant_library.directory_to_string(self.currentTab.GetDirectory())
+        picked_language = self.language_picker.get(self.language_picker.curselection()[0])
+        output = compilers.compile(file=directory, language=picked_language)
+        developer_tools.create_console(self, output)
+
 
     def GetCurrentTab(self):
         if self.tabs:
@@ -130,6 +147,11 @@ class Tab(tk.Frame):
     def UpdateFileObj(self, fileObj):
         self.fileObj = fileObj
         self._UpdateUniqueName(self.fileObj)
+
+    
+    def GetDirectory(self):
+        if self.fileObj != None:
+            return self.fileObj.name
     
 
 
@@ -168,8 +190,6 @@ class TextField(tk.Text):
         return self.index(tk.INSERT)
 
     
-class MenuBarProcesses():
-    pass
 
 
 if __name__ == '__main__':
