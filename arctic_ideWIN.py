@@ -1,7 +1,11 @@
 from dependencies import *
 import time
 from typing import Annotated
-##import char_pix_converter as fontConverter
+import file_managment as file_m
+import os
+import developer_tools
+import compilers
+import cmd_assistant_library
 
 
 class GUI(tk.Tk):
@@ -25,10 +29,12 @@ class GUI(tk.Tk):
         #File Menu
         self.fileMenu = tk.Menu(self)
         self.menuBar.add_cascade(label="File", menu=self.fileMenu)
-        self.fileMenu.add_command(label="Create a file")
-        self.fileMenu.add_command(label="Open a file")
+        self.fileMenu.add_command(label="Create a file", command = self.CreateTab)
+        self.fileMenu.add_command(label="Open a file", command = lambda: file_m.File.open(self))
         self.fileMenu.add_command(label="Create a project")
         self.fileMenu.add_command(label="Open a project")
+        self.fileMenu.add_command(label="Save", command = lambda: file_m.File.save(textSrc=self.currentTab.textField.content, _file=self.currentTab.fileObj))
+        self.fileMenu.add_command(label="Save as", command = lambda: self.currentTab.UpdateFileObj(file_m.File.save_as(textSrc=self.currentTab.textField.content)))
 
         #View Menu
         self.viewMenu = tk.Menu(self)
@@ -51,12 +57,32 @@ class GUI(tk.Tk):
 
         self.btnCreateTab = tk.Button(self.frontContextFrame, text="+", bg="#99ff6e", command = self.CreateTab, width=2, height=1)
         self.btnDeleteTab = tk.Button(self.frontContextFrame, text="-", bg="#ff5e5e", command = self.DeleteTab, width=2, height=1)
+        
+        self.language_picker = tk.Listbox(self)
+        scrollbar = tk.Scrollbar(self, orient="vertical")
+        scrollbar.config(command=self.language_picker.yview)
+        scrollbar.grid(row=1, column=2)
+        self.language_picker.config(yscrollcommand=scrollbar.set)
+
+        for language in compilers.extensions:
+            self.language_picker.insert(tk.END, language)
+        self.btn_run_internal = tk.Button(self.frontContextFrame, text="Run internal", #image=tk.PhotoImage("run_internal_console.png")
+         command = self.process_compilation,
+         )
 
         self.btnCreateTab.grid(row=0, column=0)
         self.btnDeleteTab.grid(row=0, column=1)
+        self.btn_run_internal.grid(row=0, column=2)
+        self.language_picker.grid(row=1, column=1)
         #
         self.CreateTab()
     
+    def process_compilation(self):
+        directory = cmd_assistant_library.directory_to_string(self.currentTab.GetDirectory())
+        picked_language = self.language_picker.get(self.language_picker.curselection()[0])
+        output = compilers.compile(file=directory, language=picked_language)
+        developer_tools.create_console(self, output)
+
 
     def GetCurrentTab(self):
         if self.tabs:
@@ -73,13 +99,23 @@ class GUI(tk.Tk):
         return f"{cf.Geometry.width}x{cf.Geometry.height}+{(mWidth - cf.Geometry.width)//2}+{(mHeight-cf.Geometry.height)//2}"
 
 
+    #binds
+    def text_field_binding(self, tab_obj):
+        tab_obj.textField.bind('<Control-s>', lambda e:file_m.File.save(textSrc=tab_obj.textField.content, _file=tab_obj.fileObj))
+        tab_obj.textField.bind('<Control-F5>', lambda e: self.process_compilation())
+
+
     def CreateTab(self, title=None): ##title is never used
         if not title:
            title = f"File-{len(self.tabs)+1}"
-           self.tabs.append(Tab(tabControl=self.tabControl, title=title))
+           tab = Tab(tabControl=self.tabControl, title=title)
+           self.tabs.append(tab)
         else:
             uniqueName = title
-            self.tabs.append(Tab(tabControl=self.tabControl, title=title))
+            tab = Tab(tabControl=self.tabControl, title=title)
+            self.tabs.append(tab)
+        self.text_field_binding(tab)
+        return tab
     
 
     def DeleteTab(self, tab_index=None):
@@ -103,12 +139,32 @@ class GUI(tk.Tk):
 
 
 class Tab(tk.Frame):
-    def __init__(self, tabControl, title, uniqueName=None):
+    def __init__(self, tabControl, title, uniqueName=None, fileObj=None):
         super().__init__(tabControl)
         self.uniqueName = uniqueName
+        self.fileObj = fileObj
+        self.tabControl= tabControl
         tabControl.add(self, text=title if not self.uniqueName else self.uniqueName)
+        self.tabID = tabControl.tabs()[-1]
         self.textField = TextField(self)
         self.textField.grid(row=0, column=0, sticky=tk.NW)
+    
+
+
+    def _UpdateUniqueName(self, fileObj):
+        if fileObj:
+            self.uniqueName = os.path.basename(fileObj.name)
+            self.tabControl.tab(self.tabID, text=self.uniqueName)
+
+
+    def UpdateFileObj(self, fileObj):
+        self.fileObj = fileObj
+        self._UpdateUniqueName(self.fileObj)
+
+    
+    def GetDirectory(self):
+        if self.fileObj != None:
+            return self.fileObj.name
     
 
 
@@ -119,9 +175,6 @@ class TextField(tk.Text):
         self.contentList = self.GetContent()
         self.content = ''.join(self.contentList)
 
-        self.tabCounter = 0
-        self.isTab = False
-
         # Vertical (y) Scroll Bar
         self.yscrollbar = tk.Scrollbar(parent, orient=tk.VERTICAL)
 
@@ -129,7 +182,8 @@ class TextField(tk.Text):
             font=cf.Font.fontTuple,
             width=cf.TextFieldGeometry.WIDTH,
             height=cf.TextFieldGeometry.HEIGHT,
-            yscrollcommand=self.yscrollbar.set
+            yscrollcommand=self.yscrollbar.set,
+            tabs=("1c","2c")
             )
         
         self.yscrollbar.config(command=self.yview)
@@ -149,8 +203,6 @@ class TextField(tk.Text):
         return self.index(tk.INSERT)
 
     
-class MenuBarProcesses():
-    pass
 
 
 if __name__ == '__main__':
