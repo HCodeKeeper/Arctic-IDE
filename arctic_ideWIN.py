@@ -1,6 +1,7 @@
 from dependencies import *
 import time
-##import char_pix_converter as fontConverter
+from typing import Annotated
+import os
 
 
 class GUI(tk.Tk):
@@ -12,13 +13,73 @@ class GUI(tk.Tk):
         self.geometry(self.SpawnInCenter(specs.specs["monitor"]["width"], specs.specs["monitor"]["height"]))
         self.title("Arctic IDE")
         self.tabControl = ttk.Notebook(self)
-        self.tabControl.grid(row=0, column=0)
+        self.tabControl.grid(row=1, column=0)
         self.tabs = []
-        self.currentTabIndex = None #has to be object Tab() from self.tabs # old
+        self.currentTabIndex = None #CAN ACHIEVE 0, so it is intended to be checked with None and not False(if we need)
         self.currentTab = None
 
+        #MenuBar
+        self.menuBar = tk.Menu(self)
+        self.config(menu=self.menuBar)
+
+        #File Menu
+        self.fileMenu = tk.Menu(self)
+        self.menuBar.add_cascade(label="File", menu=self.fileMenu)
+        self.fileMenu.add_command(label="Create a file", command = self.CreateTab)
+        self.fileMenu.add_command(label="Open a file", command = lambda: file_m.File.open(self))
+        self.fileMenu.add_command(label="Create a project")
+        self.fileMenu.add_command(label="Open a project")
+        self.fileMenu.add_command(label="Save (Ctrl+S)", command = lambda: file_m.File.save(textSrc=self.currentTab.textField.content, _file=self.currentTab.fileObj))
+        self.fileMenu.add_command(label="Save as", command = lambda: self.currentTab.UpdateFileObj(file_m.File.save_as(textSrc=self.currentTab.textField.content)))
+
+        #View Menu
+        self.viewMenu = tk.Menu(self)
+        self.menuBar.add_cascade(label="View", menu=self.viewMenu)
+        
+        #Tools Menu
+        self.toolsMenu = tk.Menu(self)
+        self.menuBar.add_cascade(label="Tools", menu=self.toolsMenu)
+        self.toolsMenu.add_command(label="Search in a file")
+
+        #Help Menu
+        self.helpMenu = tk.Menu(self)
+        self.menuBar.add_cascade(label="Help", menu=self.helpMenu)
+        self.helpMenu.add_command(label="Docs")
+        self.helpMenu.add_command(label="Configs")
+
+        #Front Context Frame
+        self.frontContextFrame = tk.Frame(self, width=4, height=2)
+        self.frontContextFrame.grid(row=0, column=0, sticky=tk.NW)
+
+        self.btnCreateTab = tk.Button(self.frontContextFrame, text="+", bg="#99ff6e", command = self.CreateTab, width=2, height=1)
+        self.btnDeleteTab = tk.Button(self.frontContextFrame, text="-", bg="#ff5e5e", command = self.DeleteTab, width=2, height=1)
+        
+        self.language_picker = tk.Listbox(self)
+        scrollbar = tk.Scrollbar(self, orient="vertical")
+        scrollbar.config(command=self.language_picker.yview)
+        scrollbar.grid(row=1, column=2)
+        self.language_picker.config(yscrollcommand=scrollbar.set)
+
+        for language in compilers.extensions:
+            self.language_picker.insert(tk.END, language)
+        self.btn_run_internal = tk.Button(self.frontContextFrame, text="Run internal (Ctrl+F5)", #image=tk.PhotoImage("run_internal_console.png")
+         command = self.process_compilation,
+         )
+
+        self.btnCreateTab.grid(row=0, column=0)
+        self.btnDeleteTab.grid(row=0, column=1)
+        self.btn_run_internal.grid(row=0, column=2)
+        self.language_picker.grid(row=1, column=1)
+        #
         self.CreateTab()
     
+    def process_compilation(self):
+        directory = cmd_assistant_library.directory_to_string(self.currentTab.GetDirectory())
+        picked_language = self.language_picker.get(self.language_picker.curselection()[0])
+        output = compilers.compile(file=directory, language=picked_language)
+        developer_tools.create_console(self, output)
+
+
     def GetCurrentTab(self):
         if self.tabs:
             self.currentTabIndex = self.tabControl.index(self.tabControl.select())
@@ -26,6 +87,7 @@ class GUI(tk.Tk):
         else:
             self.currentTabIndex = None
             self.currentTab = None
+            return None
         return self.currentTabIndex
 
 
@@ -33,22 +95,73 @@ class GUI(tk.Tk):
         return f"{cf.Geometry.width}x{cf.Geometry.height}+{(mWidth - cf.Geometry.width)//2}+{(mHeight-cf.Geometry.height)//2}"
 
 
-    def CreateTab(self, title=None):
+    #binds
+    def text_field_binding(self, tab_obj):
+        tab_obj.textField.bind('<Control-s>', lambda e:file_m.File.save(textSrc=tab_obj.textField.content, _file=tab_obj.fileObj))
+        tab_obj.textField.bind('<Control-F5>', lambda e: self.process_compilation())
+
+
+    def CreateTab(self, title=None): ##title is never used
         if not title:
            title = f"File-{len(self.tabs)+1}"
-        self.tabs.append(Tab(tabControl=self.tabControl, title=title))
+           tab = Tab(tabControl=self.tabControl, title=title)
+           self.tabs.append(tab)
+        else:
+            uniqueName = title
+            tab = Tab(tabControl=self.tabControl, title=title)
+            self.tabs.append(tab)
+        self.text_field_binding(tab)
+        return tab
+    
+
+    def DeleteTab(self, tab_index=None):
+        if not tab_index:
+            if self.currentTabIndex != None:
+                tab_index = self.currentTabIndex
+            else:
+                return None
+        self.tabControl.forget(self.tabs[tab_index])
+        self.tabs.pop(tab_index)
+        self.RenameAllTabs()
 
 
-class Tab(ttk.Frame):
+    def RenameAllTabs(self):
+        if self.tabs:
+            number = 0
+            for tab in self.tabs:
+                if not tab.uniqueName:
+                    number += 1
+                    self.tabControl.tab(tab, text=f"File-{number}")
 
-    gridPosiotion = (3,0)
 
-    def __init__(self, tabControl, title):
+class Tab(tk.Frame):
+    def __init__(self, tabControl, title, uniqueName=None, fileObj=None):
         super().__init__(tabControl)
-        tabControl.add(self, text=title)
+        self.uniqueName = uniqueName
+        self.fileObj = fileObj
+        self.tabControl= tabControl
+        tabControl.add(self, text=title if not self.uniqueName else self.uniqueName)
+        self.tabID = tabControl.tabs()[-1]
         self.textField = TextField(self)
-        self.textField.grid(row=Tab.gridPosiotion[0], column=Tab.gridPosiotion[1], sticky=tk.NW)
-        tabControl
+        self.textField.grid(row=0, column=0, sticky=tk.NW)
+    
+
+
+    def _UpdateUniqueName(self, fileObj):
+        if fileObj:
+            self.uniqueName = os.path.basename(fileObj.name)
+            self.tabControl.tab(self.tabID, text=self.uniqueName)
+
+
+    def UpdateFileObj(self, fileObj):
+        self.fileObj = fileObj
+        self._UpdateUniqueName(self.fileObj)
+
+    
+    def GetDirectory(self):
+        if self.fileObj != None:
+            return self.fileObj.name
+    
 
 
 class TextField(tk.Text):
@@ -58,9 +171,6 @@ class TextField(tk.Text):
         self.contentList = self.GetContent()
         self.content = ''.join(self.contentList)
 
-        self.tabCounter = 0
-        self.isTab = False
-
         # Vertical (y) Scroll Bar
         self.yscrollbar = tk.Scrollbar(parent, orient=tk.VERTICAL)
 
@@ -68,16 +178,11 @@ class TextField(tk.Text):
             font=cf.Font.fontTuple,
             width=cf.TextFieldGeometry.WIDTH,
             height=cf.TextFieldGeometry.HEIGHT,
-            yscrollcommand=self.yscrollbar.set
+            yscrollcommand=self.yscrollbar.set,
+            tabs=("1c","2c")
             )
         
         self.yscrollbar.config(command=self.yview)
-        self.bind('<Return>', self._InsertTabEvent)
-
-        self.IndLevels = [(0,0),] #To save indentation levels
-        #(0, 0) where [0] => index of ":"(int) in contentList and [1] => quantity of tabs(int)
-
-        self.currentIndLevel = self.IndLevels[-1]
 
     
     def GetContent(self, omit=None):
@@ -90,44 +195,10 @@ class TextField(tk.Text):
         return self.contentList
 
     
-    def GetCursorPosition(self):
+    def GetCursorPosition(self) -> Annotated[str, "row, column"] :
         return self.index(tk.INSERT)
 
-
-    def _GetLastIndLevel(self):
-        self.currentIndLevel = self.IndLevels[-1]
-
-
-    def _InsertTabEvent(self, event):
-        if len(self.content) >= 1:
-            if self.content[-1] == ':':
-                self.tabCounter += 1
-                self.isTab = True
-                self.IndLevels.append([self.content[-1], self.IndLevels[-1][1]+1])
-
-
-    def ErasingTab(self):
-        if '\n' in reversedContentList and ':' in reversedContentList:
-            if reversedContentList[0] == "\t":
-                for char in reversedContentList[0:reversedContentList.index('\n')]:
-                    if char != '\t':
-                        return False
-                    else:
-                        continue
-                if len(reversedContentList[0:reversedContentList.index('\n')]) < self.currentIndLevel[1] and self.currentIndLevel >= 1:
-                    self.IndLevels.append([len(self.contentList)-1, self.IndLevels[-1][1]-1])
-                        
-
-
-    def ProcessTabEvents(self):
-        self._GetLastIndLevel()
-        reversedContentList = self.contentList[::-1]
-        if self.tabCounter and self.isTab:
-            self.insert('end', "\t"*self.currentIndLevel[1])
-        else:
-            pass
-        self.isTab = False
-
+    
 
 
 if __name__ == '__main__':
@@ -135,7 +206,6 @@ if __name__ == '__main__':
     while True:
         if program.GetCurrentTab() != None:
             program.currentTab.textField.GetContent()
-            program.currentTab.textField.ProcessTabEvents()
         program.update_idletasks()
         program.update()
         time.sleep(0.01)
