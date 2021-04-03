@@ -28,7 +28,7 @@ class GUI(tk.Tk):
         self.fileMenu.add_command(label="Create a file", command = self.CreateTab)
         self.fileMenu.add_command(label="Open a file", command = lambda: file_m.File.open(self))
         self.fileMenu.add_command(label="Create a project")
-        self.fileMenu.add_command(label="Open a project", command = lambda: print(file_m.File.open_a_project(self)))
+        self.fileMenu.add_command(label="Open a project", command = lambda: file_m.File.open_a_project(self))
         self.fileMenu.add_command(label="Save (Ctrl+S)", command = lambda: file_m.File.save(textSrc=self.currentTab.textField.content, _file=self.currentTab.fileObj))
         self.fileMenu.add_command(label="Save as", command = lambda: self.currentTab.UpdateFileObj(file_m.File.save_as(textSrc=self.currentTab.textField.content)))
 
