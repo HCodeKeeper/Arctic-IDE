@@ -1,11 +1,7 @@
 from dependencies import *
 import time
 from typing import Annotated
-import file_managment as file_m
 import os
-import developer_tools
-import compilers
-import cmd_assistant_library
 
 
 class GUI(tk.Tk):
@@ -32,8 +28,8 @@ class GUI(tk.Tk):
         self.fileMenu.add_command(label="Create a file", command = self.CreateTab)
         self.fileMenu.add_command(label="Open a file", command = lambda: file_m.File.open(self))
         self.fileMenu.add_command(label="Create a project")
-        self.fileMenu.add_command(label="Open a project")
-        self.fileMenu.add_command(label="Save", command = lambda: file_m.File.save(textSrc=self.currentTab.textField.content, _file=self.currentTab.fileObj))
+        self.fileMenu.add_command(label="Open a project", command = lambda: print(file_m.File.open_a_project(self)))
+        self.fileMenu.add_command(label="Save (Ctrl+S)", command = lambda: file_m.File.save(textSrc=self.currentTab.textField.content, _file=self.currentTab.fileObj))
         self.fileMenu.add_command(label="Save as", command = lambda: self.currentTab.UpdateFileObj(file_m.File.save_as(textSrc=self.currentTab.textField.content)))
 
         #View Menu
@@ -66,7 +62,7 @@ class GUI(tk.Tk):
 
         for language in compilers.extensions:
             self.language_picker.insert(tk.END, language)
-        self.btn_run_internal = tk.Button(self.frontContextFrame, text="Run internal", #image=tk.PhotoImage("run_internal_console.png")
+        self.btn_run_internal = tk.Button(self.frontContextFrame, text="Run internal (Ctrl+F5)", #image=tk.PhotoImage("run_internal_console.png")
          command = self.process_compilation,
          )
 

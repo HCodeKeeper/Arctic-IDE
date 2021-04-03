@@ -2,6 +2,7 @@ from tkinter import filedialog
 import tkinter as tk
 from typing import Annotated
 import os
+from projectFieldprocessor import *
 
 class File():
     default_ext = ".arc"
@@ -46,4 +47,21 @@ class File():
             return True
         else:
             return False
+    
+
+    def open_a_project(worker): #worker - GUI
+        _file = filedialog.askopenfile()
+        if os.path.splitext(_file.name)[1] == extension:
+            files = Sender(_file.name).files
+            if files:
+                for file in files:
+                    if file.name:
+                            tab = worker.CreateTab(os.path.basename(file.name))
+                            tab.UpdateFileObj(file)
+                            tab.textField.insert(tk.INSERT, file.read())
+                    else:
+                        return 1
+
+                return True
+        return 2
 
