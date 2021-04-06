@@ -1,19 +1,9 @@
 import tkinter as tk
-
+from file_override import *
 extension = ".arc_projectfield"
 
 
-class File_override():
-    def __init__(self, directory):
-        self.name = directory
-    
 
-    def read(self):
-        try:
-            with open(self.name) as file:
-                return file.read()
-        except:
-            return "empty file"
 
 class Sender():
     def __init__(self, file):

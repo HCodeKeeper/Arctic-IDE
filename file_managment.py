@@ -3,6 +3,8 @@ import tkinter as tk
 from typing import Annotated
 import os
 from projectFieldprocessor import *
+import re
+from file_override import *
 
 class File():
     default_ext = ".arc"
@@ -65,3 +67,20 @@ class File():
                 return True
         return 2
 
+'''
+    def open_by_directories(worker, directories): #Doesn't require dialogue menu
+        for dir in directories:
+            if dir:
+                file = File_override(dir)
+                tab = worker.CreateTab(os.path.basename(file.name))
+                tab.UpdateFileObj(file)
+                tab.textField.insert(tk.INSERT, file.read())
+
+
+
+class Utilities():
+
+    def _directory_string_translator(event_directories):
+        return re.findall(r"\S[^.]+\.\S+", event_directories.data)
+
+'''

@@ -24,7 +24,7 @@ class Console(tk.Text):
             width=cf.ConsoleField.WIDTH,
             height=cf.ConsoleField.HEIGHT,
             bg="black",
-            fg="green",
+            fg="#10cc02",
             font=('Helvetica',14,'bold')
         )
     
